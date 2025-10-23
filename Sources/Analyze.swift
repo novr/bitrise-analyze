@@ -33,7 +33,11 @@ struct Analyze: AsyncParsableCommand {
                 try await bitriseClient.processBuildsStreaming(
                     outputPath: output,
                     progressCallback: { processed, total in
-                        print("📊 処理済み: \(processed)件\(total > 0 ? " / \(total)件" : "")")
+                        if total > 0 {
+                            print("📊 処理済み: \(processed)件 / \(total)件")
+                        } else {
+                            print("📊 処理済み: \(processed)件")
+                        }
                     }
                 )
                 print("✅ ストリーミング処理が完了しました。")

@@ -79,7 +79,6 @@ extension BitriseClient: StreamingBuildProcessor {
         
         var paging: Components.Schemas.v0_period_BuildListAllResponseModel.pagingPayload?
         var totalProcessed = 0
-        var totalCount: Int?
         
         repeat {
             let response = try await fetchBuildsPage(next: paging?.value1.next)
@@ -91,17 +90,9 @@ extension BitriseClient: StreamingBuildProcessor {
                     try writer.appendItem(item)
                     totalProcessed += 1
                     
-                    // 進捗コールバック
-                    if let total = totalCount {
-                        progressCallback(totalProcessed, total)
-                    }
+                    // 進捗コールバック（総件数は不明なので処理済み件数のみ表示）
+                    progressCallback(totalProcessed, 0)
                 }
-            }
-            
-            // 総件数の推定（初回のみ）
-            if totalCount == nil {
-                // ページサイズから総件数を推定（正確ではないが概算）
-                totalCount = 50 // デフォルト値
             }
             
             paging = json.paging
