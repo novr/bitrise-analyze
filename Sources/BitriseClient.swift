@@ -71,7 +71,7 @@ struct BitriseClient: BitriseClientProtocol {
         return Components.Schemas.v0_period_BuildListAllResponseModel(data: data, paging: paging)
     }
     
-    private func fetchBuildsPage(next: String?) async throws -> Operations.build_hyphen_list_hyphen_all.Output {
+    func fetchBuildsPage(next: String?) async throws -> Operations.build_hyphen_list_hyphen_all.Output {
         var lastError: Error?
         
         for attempt in 0..<maxRetries {
