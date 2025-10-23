@@ -7,9 +7,9 @@ let package = Package(
     name: "bitrise-analyze",
     platforms: [.macOS(.v13)],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-openapi-generator", from: "1.0.0"),
-        .package(url: "https://github.com/apple/swift-openapi-runtime", from: "1.0.0"),
-        .package(url: "https://github.com/apple/swift-openapi-urlsession", from: "1.0.0"),
+        .package(url: "https://github.com/apple/swift-openapi-generator", from: "1.2.0"),
+        .package(url: "https://github.com/apple/swift-openapi-runtime", from: "1.3.0"),
+        .package(url: "https://github.com/apple/swift-openapi-urlsession", from: "1.0.1"),
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.3.0"),
     ],
     targets: [
