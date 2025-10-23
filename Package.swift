@@ -26,5 +26,9 @@ let package = Package(
                 .plugin(name: "OpenAPIGenerator", package: "swift-openapi-generator"),
             ]
         ),
+        .testTarget(
+            name: "bitrise-analyzeTests",
+            dependencies: ["bitrise-analyze"]
+        ),
     ]
 )
