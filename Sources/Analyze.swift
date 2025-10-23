@@ -13,6 +13,9 @@ struct Analyze: AsyncParsableCommand {
 
     @Option
     var output: String?
+    
+    @Flag
+    var streaming: Bool = false
 
     mutating func run() async throws {
         do {
@@ -24,15 +27,28 @@ struct Analyze: AsyncParsableCommand {
             
             // BitriseClientを使用してデータを取得
             let bitriseClient = try BitriseClient(token: token)
-            let result = try await bitriseClient.fetchAllBuilds()
             
-            // 結果をファイルに出力
-            let jsonData = try JSONEncoder().encode(result)
-            try jsonData.write(to: URL(filePath: output))
+            if streaming {
+                print("🔄 ストリーミングモードで処理中...")
+                try await bitriseClient.processBuildsStreaming(
+                    outputPath: output,
+                    progressCallback: { processed, total in
+                        print("📊 処理済み: \(processed)件\(total > 0 ? " / \(total)件" : "")")
+                    }
+                )
+                print("✅ ストリーミング処理が完了しました。")
+            } else {
+                let result = try await bitriseClient.fetchAllBuilds()
+                
+                // 結果をファイルに出力
+                let jsonData = try JSONEncoder().encode(result)
+                try jsonData.write(to: URL(filePath: output))
+                
+                print("✅ データの取得が完了しました。")
+                print("📊 取得件数: \(result.data?.count ?? 0)件")
+            }
             
-            print("✅ データの取得が完了しました。")
             print("📁 出力ファイル: \(output)")
-            print("📊 取得件数: \(result.data?.count ?? 0)件")
             
         } catch let error as BitriseClientError {
             print("❌ エラーが発生しました: \(error.localizedDescription)")
