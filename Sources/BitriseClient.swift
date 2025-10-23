@@ -58,13 +58,20 @@ struct BitriseClient: BitriseClientProtocol {
     func fetchAllBuilds() async throws -> Components.Schemas.v0_period_BuildListAllResponseModel {
         var paging: Components.Schemas.v0_period_BuildListAllResponseModel.pagingPayload?
         var data: [Components.Schemas.v0_period_BuildListAllResponseItemModel] = []
+        var pageCount = 0
+        var totalProcessed = 0
         
         repeat {
+            pageCount += 1
             let response = try await fetchBuildsPage(next: paging?.value1.next)
             let json = try response.ok.body.json
+            
             if let newData = json.data {
                 data += newData
+                totalProcessed += newData.count
+                print("📄 ページ \(pageCount) 完了: \(newData.count)件取得 (累計: \(totalProcessed)件)")
             }
+            
             paging = json.paging
         } while paging?.value1.next != nil
         
