@@ -102,7 +102,8 @@ swift run bitrise-analyze --help
 OpenAPI仕様書が更新された場合、以下のコマンドでクライアントコードを再生成できます：
 
 ```bash
-swift package generate-openapi-code
+swift package resolve
+swift build
 ```
 
 ## ライセンス
