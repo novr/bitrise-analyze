@@ -4,6 +4,12 @@ import OpenAPIRuntime
 
 @main
 struct Analyze: AsyncParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "bitrise-analyze",
+        abstract: "Bitriseビルドデータの取得と分析ツール",
+        subcommands: [AggregateStats.self]
+    )
+    
     enum AnalyzeError: Error {
         case Parameter(String)
     }
