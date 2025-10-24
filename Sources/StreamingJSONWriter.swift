@@ -79,25 +79,42 @@ extension BitriseClient: StreamingBuildProcessor {
         
         var paging: Components.Schemas.v0_period_BuildListAllResponseModel.pagingPayload?
         var totalProcessed = 0
+        var pageCount = 0
+        let startTime = Date()
         
         repeat {
+            pageCount += 1
             let response = try await fetchBuildsPage(next: paging?.value1.next)
             let json = try response.ok.body.json
             
             if let newData = json.data {
+                print("📄 ページ \(pageCount) 処理中: \(newData.count)件")
+                
                 // 各アイテムをストリーミング出力
-                for item in newData {
+                for (index, item) in newData.enumerated() {
                     try writer.appendItem(item)
                     totalProcessed += 1
                     
                     // 進捗コールバック（総件数は不明なので処理済み件数のみ表示）
                     progressCallback(totalProcessed, 0)
+                    
+                    // ページ内の進捗表示（10件ごと）
+                    if (index + 1) % 10 == 0 || index == newData.count - 1 {
+                        let elapsed = Date().timeIntervalSince(startTime)
+                        let rate = Double(totalProcessed) / elapsed
+                        print("  📊 ページ内進捗: \(index + 1)/\(newData.count)件 (処理速度: \(String(format: "%.1f", rate))件/秒)")
+                    }
                 }
+                
+                print("✅ ページ \(pageCount) 完了: \(newData.count)件処理 (累計: \(totalProcessed)件)")
             }
             
             paging = json.paging
         } while paging?.value1.next != nil
         
         try writer.endArray()
+        
+        let totalTime = Date().timeIntervalSince(startTime)
+        print("🎉 全処理完了: \(totalProcessed)件を\(String(format: "%.1f", totalTime))秒で処理")
     }
 }

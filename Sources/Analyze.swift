@@ -42,9 +42,11 @@ struct Analyze: AsyncParsableCommand {
                 )
                 print("✅ ストリーミング処理が完了しました。")
             } else {
+                print("📥 従来モードでデータ取得中...")
                 let result = try await bitriseClient.fetchAllBuilds()
                 
                 // 結果をファイルに出力
+                print("💾 ファイルに出力中...")
                 let jsonData = try JSONEncoder().encode(result)
                 try jsonData.write(to: URL(filePath: output))
                 
