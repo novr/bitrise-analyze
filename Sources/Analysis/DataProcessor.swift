@@ -51,26 +51,7 @@ class DataProcessorImpl: DataProcessor {
         )
     }
     
-    private func filterBuildsByPeriod(_ builds: [BuildData], period: AnalysisPeriod) throws -> [BuildData] {
-        guard let days = period.days else {
-            return builds
-        }
-        
-        let now = Date()
-        let calendar = Calendar.current
-        
-        guard let startDate = calendar.date(byAdding: .day, value: -days, to: now) else {
-            throw AnalysisError.invalidDateCalculation
-        }
-        
-        let formatter = ISO8601DateFormatter()
-        
-        return builds.filter { build in
-            guard let triggeredAt = build.triggeredAt,
-                  let date = formatter.date(from: triggeredAt) else { return false }
-            return date >= startDate
-        }
-    }
+    // 日付フィルタリングはUtilsディレクトリに移動済み
 }
 
 // MARK: - レポートジェネレーター実装
@@ -104,7 +85,7 @@ class ReportGeneratorImpl {
         }
         
         // コンソール出力
-        printConsoleSummary(statistics: data.statistics)
+        printConsoleSummary(stats: data.statistics)
     }
     
     private func generateCSVReports(from data: ProcessedData, to directory: URL) async throws {
@@ -121,15 +102,15 @@ class ReportGeneratorImpl {
         try outputManager.writeCSV(workflowCSV, filename: "workflow_stats.csv", to: directory)
         
         // 日別トレンドCSV
-        let dailyCSV = try generateDailyTrendCSV(builds: data.builds)
+        let dailyCSV = generateDailyTrendCSV(builds: data.builds)
         try outputManager.writeCSV(dailyCSV, filename: "daily_trends.csv", to: directory)
         
         // 時間帯分布CSV
-        let hourlyCSV = try generateHourlyDistributionCSV(builds: data.builds)
+        let hourlyCSV = generateHourlyDistributionCSV(builds: data.builds)
         try outputManager.writeCSV(hourlyCSV, filename: "hourly_distribution.csv", to: directory)
         
         // マシンタイプ統計CSV
-        let machineCSV = try generateMachineTypeCSV(builds: data.builds)
+        let machineCSV = generateMachineTypeCSV(builds: data.builds)
         try outputManager.writeCSV(machineCSV, filename: "machine_type_stats.csv", to: directory)
     }
     
@@ -140,136 +121,7 @@ class ReportGeneratorImpl {
         }
     }
     
-    private func printConsoleSummary(statistics: [String: BuildStatistics]) {
-        print("\n" + String(repeating: "=", count: 60))
-        print("📊 Bitrise ビルド統計サマリー")
-        print(String(repeating: "=", count: 60))
-        
-        for (period, stat) in statistics {
-            print("\n📈 \(period)期間:")
-            print("  📦 総ビルド数: \(stat.totalBuilds)")
-            print("  ✅ 成功: \(stat.successCount) (\(String(format: "%.1f", stat.successRate))%)")
-            print("  ❌ 失敗: \(stat.errorCount)")
-            print("  ⏹️  中断: \(stat.abortedCount)")
-            print("  ⏱️  平均実行時間: \(formatDuration(stat.averageDuration))")
-            print("  📊 中央値: \(formatDuration(stat.medianDuration))")
-            print("  💰 総コスト: \(stat.totalCreditCost) credits")
-        }
-        
-        print("\n" + String(repeating: "=", count: 60))
-    }
-    
-    // MARK: - 追加CSV生成メソッド
-    
-    private func generateDailyTrendCSV(builds: [BuildData]) throws -> String {
-        var csv = "日付,ビルド数,成功数,失敗数,平均実行時間(分)\n"
-        
-        let formatter = ISO8601DateFormatter()
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"
-        
-        let dailyStats = Dictionary(grouping: builds) { build in
-            guard let triggeredAt = build.triggeredAt,
-                  let date = formatter.date(from: triggeredAt) else { return "Unknown" }
-            return dateFormatter.string(from: date)
-        }
-        
-        for (date, builds) in dailyStats.sorted(by: { $0.key < $1.key }) {
-            let total = builds.count
-            let success = builds.filter { $0.statusText == "success" }.count
-            let failure = builds.filter { $0.statusText == "error" }.count
-            
-            let durations = builds.compactMap { build -> TimeInterval? in
-                guard let triggeredAt = build.triggeredAt,
-                      let finishedAt = build.finishedAt else { return nil }
-                
-                guard let start = formatter.date(from: triggeredAt),
-                      let end = formatter.date(from: finishedAt) else { return nil }
-                
-                return end.timeIntervalSince(start)
-            }
-            
-            let averageDuration = durations.isEmpty ? 0 : durations.reduce(0, +) / Double(durations.count)
-            
-            csv += "\(date),\(total),\(success),\(failure),\(String(format: "%.2f", averageDuration/60))\n"
-        }
-        
-        return csv
-    }
-    
-    private func generateHourlyDistributionCSV(builds: [BuildData]) throws -> String {
-        var csv = "時間,ビルド数,成功率(%)\n"
-        
-        let formatter = ISO8601DateFormatter()
-        let hourFormatter = DateFormatter()
-        hourFormatter.dateFormat = "HH"
-        
-        let hourlyStats = Dictionary(grouping: builds) { build in
-            guard let triggeredAt = build.triggeredAt,
-                  let date = formatter.date(from: triggeredAt) else { return "Unknown" }
-            return hourFormatter.string(from: date)
-        }
-        
-        for hour in 0...23 {
-            let hourStr = String(format: "%02d", hour)
-            let builds = hourlyStats[hourStr] ?? []
-            let total = builds.count
-            let success = builds.filter { $0.statusText == "success" }.count
-            let successRate = total > 0 ? Double(success) / Double(total) * 100 : 0
-            
-            csv += "\(hourStr):00,\(total),\(String(format: "%.1f", successRate))\n"
-        }
-        
-        return csv
-    }
-    
-    private func generateMachineTypeCSV(builds: [BuildData]) throws -> String {
-        var csv = "マシンタイプ,使用回数,使用率(%),平均実行時間(分),総実行時間(分),総コスト\n"
-        
-        let totalBuilds = builds.count
-        let machineStats = Dictionary(grouping: builds, by: { $0.machineTypeId ?? "Unknown" })
-            .mapValues { builds in
-                let count = builds.count
-                let usageRate = totalBuilds > 0 ? Double(count) / Double(totalBuilds) * 100 : 0
-                
-                let durations = builds.compactMap { build -> TimeInterval? in
-                    guard let triggeredAt = build.triggeredAt,
-                          let finishedAt = build.finishedAt else { return nil }
-                    
-                    let formatter = ISO8601DateFormatter()
-                    guard let start = formatter.date(from: triggeredAt),
-                          let end = formatter.date(from: finishedAt) else { return nil }
-                    
-                    return end.timeIntervalSince(start)
-                }
-                
-                let averageDuration = durations.isEmpty ? 0 : durations.reduce(0, +) / Double(durations.count)
-                let totalDuration = durations.reduce(0, +)
-                let totalCost = builds.compactMap { $0.creditCost }.reduce(0, +)
-                
-                return (count, usageRate, averageDuration, totalDuration, totalCost)
-            }
-        
-        for (machineType, stats) in machineStats.sorted(by: { $0.value.0 > $1.value.0 }) {
-            csv += "\(machineType),\(stats.0),\(String(format: "%.1f", stats.1)),\(String(format: "%.2f", stats.2/60)),\(String(format: "%.2f", stats.3/60)),\(stats.4)\n"
-        }
-        
-        return csv
-    }
-    
-    private func formatDuration(_ duration: TimeInterval) -> String {
-        let hours = Int(duration) / 3600
-        let minutes = Int(duration.truncatingRemainder(dividingBy: 3600)) / 60
-        let seconds = Int(duration.truncatingRemainder(dividingBy: 60))
-        
-        if hours > 0 {
-            return String(format: "%dh %dm %ds", hours, minutes, seconds)
-        } else if minutes > 0 {
-            return String(format: "%dm %ds", minutes, seconds)
-        } else {
-            return String(format: "%ds", seconds)
-        }
-    }
+    // ユーティリティ関数はUtilsディレクトリに移動済み
 }
 
 // MARK: - Markdownジェネレーター実装

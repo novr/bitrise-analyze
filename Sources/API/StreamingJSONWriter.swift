@@ -55,10 +55,7 @@ class StreamingJSONWriter {
     }
 }
 
-enum StreamingJSONWriterError: Error {
-    case invalidString
-    case fileWriteError
-}
+// StreamingJSONWriterErrorはModelsディレクトリに移動済み
 
 /// ビルドデータのストリーミング処理をサポートするプロトコル
 protocol StreamingBuildProcessor {
