@@ -55,10 +55,6 @@ class StreamingJSONWriter {
     }
 }
 
-enum StreamingJSONWriterError: Error {
-    case invalidString
-    case fileWriteError
-}
 
 /// ビルドデータのストリーミング処理をサポートするプロトコル
 protocol StreamingBuildProcessor {

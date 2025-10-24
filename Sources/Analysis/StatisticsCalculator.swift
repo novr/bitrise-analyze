@@ -100,32 +100,6 @@ class ImprovedStatisticsCalculator: StatisticsCalculator {
         return durations
     }
     
-    private func calculateMedian(_ values: [TimeInterval]) -> TimeInterval {
-        let sorted = values.sorted()
-        let count = sorted.count
-        
-        if count == 0 { return 0 }
-        if count % 2 == 0 {
-            return (sorted[count / 2 - 1] + sorted[count / 2]) / 2
-        } else {
-            return sorted[count / 2]
-        }
-    }
-    
-    private func calculatePercentile(_ sortedValues: [TimeInterval], _ percentile: Int) -> TimeInterval {
-        if sortedValues.isEmpty { return 0 }
-        
-        let index = Int(ceil(Double(sortedValues.count) * Double(percentile) / 100.0)) - 1
-        return sortedValues[min(index, sortedValues.count - 1)]
-    }
-    
-    private func calculateStandardDeviation(_ values: [TimeInterval], mean: TimeInterval) -> TimeInterval {
-        if values.isEmpty { return 0 }
-        
-        let squaredDifferences = values.map { pow($0 - mean, 2) }
-        let variance = squaredDifferences.reduce(0, +) / Double(values.count)
-        return sqrt(variance)
-    }
 }
 
 // MARK: - ワークフロー分析器

@@ -2,32 +2,6 @@ import Foundation
 import OpenAPIRuntime
 import OpenAPIURLSession
 
-/// Bitrise APIクライアントのエラー型
-enum BitriseClientError: Error, LocalizedError, Equatable {
-    case invalidToken
-    case networkError(String)
-    case apiError(String)
-    case timeout
-    case invalidResponse
-    case rateLimited
-    
-    var errorDescription: String? {
-        switch self {
-        case .invalidToken:
-            return "無効なアクセストークンです。トークンを確認してください。"
-        case .networkError(let message):
-            return "ネットワークエラー: \(message)"
-        case .apiError(let message):
-            return "APIエラー: \(message)"
-        case .timeout:
-            return "リクエストがタイムアウトしました。しばらく待ってから再試行してください。"
-        case .invalidResponse:
-            return "無効なレスポンスを受信しました。"
-        case .rateLimited:
-            return "APIレート制限に達しました。しばらく待ってから再試行してください。"
-        }
-    }
-}
 
 /// Bitrise APIクライアントのプロトコル
 protocol BitriseClientProtocol {
