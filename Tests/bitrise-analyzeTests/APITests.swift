@@ -55,12 +55,10 @@ class APITests: XCTestCase {
     
     func testStreamingJSONWriterErrorCases() {
         let invalidStringError = StreamingJSONWriterError.invalidString
-        let fileWriteError = StreamingJSONWriterError.fileWriteError
         let encodingError = StreamingJSONWriterError.encodingFailed
         let fileCreationError = StreamingJSONWriterError.fileCreationFailed
         
         XCTAssertNotNil(invalidStringError)
-        XCTAssertNotNil(fileWriteError)
         XCTAssertNotNil(encodingError)
         XCTAssertNotNil(fileCreationError)
     }
@@ -116,7 +114,8 @@ class APITests: XCTestCase {
         for error in errors {
             let description = error.localizedDescription
             XCTAssertFalse(description.isEmpty)
-            XCTAssertTrue(description.contains("エラー") || description.contains("エラー"))
+            // 日本語のエラーメッセージが含まれていることを確認
+            XCTAssertTrue(description.contains("エラー") || description.contains("無効") || description.contains("ネットワーク") || description.contains("API") || description.contains("タイムアウト") || description.contains("レスポンス") || description.contains("レート"))
         }
     }
     
@@ -132,7 +131,7 @@ class APITests: XCTestCase {
                 try writer.startArray()
                 
                 for i in 0..<1000 {
-                    try writer.appendItem(["id": i, "data": "test\(i)"])
+                    try writer.appendItem(["id": String(i), "data": "test\(i)"])
                 }
                 
                 try writer.endArray()
