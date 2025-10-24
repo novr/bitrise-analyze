@@ -12,12 +12,17 @@ func writeReports(_ reports: [Report], to directory: URL) throws {
     }
 }
 
-/// CSVファイルを書き込む
+/// CSVファイルを書き込む（Excel対応のためUTF-8 BOM付き）
 func writeCSV(_ csv: String, filename: String, to directory: URL) throws {
     try createDirectoryIfNeeded(directory)
     
     let fileURL = directory.appendingPathComponent(filename)
-    try csv.write(to: fileURL, atomically: true, encoding: .utf8)
+    
+    // UTF-8 BOMを追加してExcelでの文字化けを防ぐ
+    let bom = "\u{FEFF}"
+    let csvWithBom = bom + csv
+    
+    try csvWithBom.write(to: fileURL, atomically: true, encoding: .utf8)
 }
 
 /// Markdownファイルを書き込む
