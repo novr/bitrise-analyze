@@ -89,7 +89,6 @@ class DefaultDateFormatterProvider: DateFormatterProvider {
     }
 }
 
-// MARK: - CSVエスケープ処理と出力マネージャーはUtilsディレクトリに移動済み
 
 // MARK: - 改善されたCSVジェネレーター
 

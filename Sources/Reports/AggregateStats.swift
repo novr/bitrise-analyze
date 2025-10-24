@@ -58,10 +58,3 @@ struct AggregateStats: AsyncParsableCommand {
     }
 }
 
-// MARK: - データ構造はModelsディレクトリに移動済み
-
-// MARK: - 統計計算はUtilsディレクトリに移動済み
-
-// MARK: - レポート生成はUtilsディレクトリに移動済み
-
-// MARK: - ユーティリティ関数はUtilsディレクトリに移動済み

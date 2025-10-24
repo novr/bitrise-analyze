@@ -100,7 +100,6 @@ class ImprovedStatisticsCalculator: StatisticsCalculator {
         return durations
     }
     
-    // 統計計算ユーティリティはUtilsディレクトリに移動済み
 }
 
 // MARK: - ワークフロー分析器

@@ -55,7 +55,6 @@ class StreamingJSONWriter {
     }
 }
 
-// StreamingJSONWriterErrorはModelsディレクトリに移動済み
 
 /// ビルドデータのストリーミング処理をサポートするプロトコル
 protocol StreamingBuildProcessor {

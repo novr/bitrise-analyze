@@ -51,7 +51,6 @@ class DataProcessorImpl: DataProcessor {
         )
     }
     
-    // 日付フィルタリングはUtilsディレクトリに移動済み
 }
 
 // MARK: - レポートジェネレーター実装
@@ -121,7 +120,6 @@ class ReportGeneratorImpl {
         }
     }
     
-    // ユーティリティ関数はUtilsディレクトリに移動済み
 }
 
 // MARK: - Markdownジェネレーター実装

@@ -2,7 +2,6 @@ import Foundation
 import OpenAPIRuntime
 import OpenAPIURLSession
 
-/// Bitrise APIクライアントのエラー型はModelsディレクトリに移動済み
 
 /// Bitrise APIクライアントのプロトコル
 protocol BitriseClientProtocol {

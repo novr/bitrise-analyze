@@ -1,6 +1,5 @@
 import Foundation
 
-// MARK: - エラー定義と設定構造体はModelsディレクトリに移動済み
 
 // MARK: - 統計計算プロトコル
 
@@ -59,4 +58,3 @@ protocol CSVEscaper {
     func escape(_ value: String) -> String
 }
 
-// MARK: - 統計データ構造はModelsディレクトリに移動済み
