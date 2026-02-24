@@ -224,6 +224,7 @@ class ImprovedCSVGenerator: CSVGenerator {
     
     func generateCostEstimateCSV(from analysis: RepositoryAnalysis, period: String) throws -> String {
         guard period == "30日" || period == "90日" else { return "" }
+        let is90Days = (period == "90日")
         typealias ProjectSums = (iosBuilds: Int, iosHours: Double, androidBuilds: Int, androidHours: Double, otherBuilds: Int, otherHours: Double)
         var byProject: [String: ProjectSums] = [:]
         for repository in analysis.repositoryStats.keys {
@@ -252,9 +253,16 @@ class ImprovedCSVGenerator: CSVGenerator {
                 cur.otherBuilds + otherBuilds, cur.otherHours + otherHours
             )
         }
-        var csv = "リポジトリ(プロジェクト),iOSビルド数,iOS使用時間(時間),Androidビルド数,Android使用時間(時間),その他ビルド数,その他使用時間(時間),合計ビルド数,合計使用時間(時間),ケース1_Xcode+Bitrise(USD),ケース1_Xcodeプラン,ケース1_Bitriseプラン,ケース2_Xcode+GitHub(USD),ケース3_Bitrise(USD),ケース3_Bitriseプラン,ケース4_GitHub(USD)\n"
+        var csv = "リポジトリ(プロジェクト),iOSビルド数,iOS使用時間(時間),Androidビルド数,Android使用時間(時間),その他ビルド数,その他使用時間(時間),合計ビルド数,合計使用時間(時間),ケース1_Xcode+Bitrise(月額USD),ケース1_Xcodeプラン,ケース1_Bitriseプラン,ケース2_Xcode+GitHub(月額USD),ケース3_Bitrise(月額USD),ケース3_Bitriseプラン,ケース4_GitHub(月額USD)\n"
         for project in byProject.keys.sorted() {
-            let s = byProject[project]!
+            var s = byProject[project]!
+            if is90Days {
+                s = (
+                    s.iosBuilds / 3, s.iosHours / 3,
+                    s.androidBuilds / 3, s.androidHours / 3,
+                    s.otherBuilds / 3, s.otherHours / 3
+                )
+            }
             let totalBuilds = s.iosBuilds + s.androidBuilds + s.otherBuilds
             let totalHours = s.iosHours + s.androidHours + s.otherHours
             let hasIOS = s.iosBuilds > 0
