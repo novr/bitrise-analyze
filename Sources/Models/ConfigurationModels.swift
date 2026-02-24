@@ -22,7 +22,7 @@ struct AnalysisConfiguration: Codable {
             maxDurationHours: 24,
             minDurationSeconds: 0
         ),
-        outputFormats: [.csv, .markdown],
+        outputFormats: [.csv],
         performance: PerformanceSettings(
             batchSize: 1000,
             enableParallelProcessing: true,

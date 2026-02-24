@@ -183,41 +183,56 @@ class ImprovedCSVGenerator: CSVGenerator {
     }
     
     func generateProjectSummaryCSV(from analysis: RepositoryAnalysis) throws -> String {
-        var csv = "リポジトリ,30日_ビルド数,30日_平均時間_分,30日_総時間_分,90日_ビルド数,90日_平均時間_分,90日_総時間_分\n"
-        for repository in analysis.repositoryStats.keys.sorted() {
+        typealias PeriodSums = (builds: Int, totalMin: Double)
+        var byProject: [String: (d30: PeriodSums, d90: PeriodSums)] = [:]
+        for repository in analysis.repositoryStats.keys {
             guard let periodStats = analysis.repositoryStats[repository] else { continue }
-            func rowFor(_ period: String) -> (Int, Double, Double) {
-                guard let stats = periodStats[period] else { return (0, 0, 0) }
+            let project = CostEstimator.projectName(from: repository)
+            func rowFor(_ period: String) -> PeriodSums {
+                guard let stats = periodStats[period] else { return (0, 0) }
                 let avgMin = stats.averageDuration / 60
                 let totalMin = Double(stats.totalBuilds) * avgMin
-                return (stats.totalBuilds, avgMin, totalMin)
+                return (stats.totalBuilds, totalMin)
             }
             let d30 = rowFor("30日")
             let d90 = rowFor("90日")
-            if d30.0 == 0 && d90.0 == 0 { continue }
+            let cur = byProject[project] ?? ((0, 0), (0, 0))
+            byProject[project] = (
+                (cur.d30.builds + d30.builds, cur.d30.totalMin + d30.totalMin),
+                (cur.d90.builds + d90.builds, cur.d90.totalMin + d90.totalMin)
+            )
+        }
+        var csv = "リポジトリ(プロジェクト),30日_ビルド数,30日_平均時間_分,30日_総時間_分,90日_ビルド数,90日_平均時間_分,90日_総時間_分\n"
+        for project in byProject.keys.sorted() {
+            let (d30, d90) = byProject[project]!
+            if d30.builds == 0 && d90.builds == 0 { continue }
+            let avg30 = d30.builds > 0 ? d30.totalMin / Double(d30.builds) : 0.0
+            let avg90 = d90.builds > 0 ? d90.totalMin / Double(d90.builds) : 0.0
             let line = [
-                escaper.escape(repository),
-                String(d30.0),
-                String(format: "%.2f", d30.1),
-                String(format: "%.2f", d30.2),
-                String(d90.0),
-                String(format: "%.2f", d90.1),
-                String(format: "%.2f", d90.2)
+                escaper.escape(project),
+                String(d30.builds),
+                String(format: "%.2f", avg30),
+                String(format: "%.2f", d30.totalMin),
+                String(d90.builds),
+                String(format: "%.2f", avg90),
+                String(format: "%.2f", d90.totalMin)
             ].joined(separator: ",")
             csv += line + "\n"
         }
         return csv
     }
     
-    func generateCostEstimateCSV(from analysis: RepositoryAnalysis) throws -> String {
-        var csv = "リポジトリ(プロジェクト),iOSビルド数,iOS使用時間(時間),Androidビルド数,Android使用時間(時間),その他ビルド数,その他使用時間(時間),合計ビルド数,合計使用時間(時間),ケース1_Xcode+Bitrise(USD),ケース1_Xcodeプラン,ケース1_Bitriseプラン,ケース2_Xcode+GitHub(USD),ケース3_Bitrise(USD),ケース3_Bitriseプラン,ケース4_GitHub(USD)\n"
-        for repository in analysis.repositoryStats.keys.sorted() {
-            guard let periodStats = analysis.repositoryStats[repository], let stats = periodStats["30日"] else { continue }
+    func generateCostEstimateCSV(from analysis: RepositoryAnalysis, period: String) throws -> String {
+        guard period == "30日" || period == "90日" else { return "" }
+        typealias ProjectSums = (iosBuilds: Int, iosHours: Double, androidBuilds: Int, androidHours: Double, otherBuilds: Int, otherHours: Double)
+        var byProject: [String: ProjectSums] = [:]
+        for repository in analysis.repositoryStats.keys {
+            guard let periodStats = analysis.repositoryStats[repository], let stats = periodStats[period] else { continue }
             let builds = stats.totalBuilds
             let avgMin = stats.averageDuration / 60
             let totalMin = Double(builds) * avgMin
             let hours = totalMin / 60
-            
+            let project = CostEstimator.projectName(from: repository)
             var iosBuilds = 0, androidBuilds = 0, otherBuilds = 0
             var iosHours = 0.0, androidHours = 0.0, otherHours = 0.0
             if CostEstimator.isIOSRepo(repository) {
@@ -230,25 +245,34 @@ class ImprovedCSVGenerator: CSVGenerator {
                 otherBuilds = builds
                 otherHours = hours
             }
-            
-            let totalBuilds = iosBuilds + androidBuilds + otherBuilds
-            let totalHours = iosHours + androidHours + otherHours
-            let hasIOS = iosBuilds > 0
-            let hasAndroid = androidBuilds > 0
+            let cur = byProject[project] ?? (0, 0, 0, 0, 0, 0)
+            byProject[project] = (
+                cur.iosBuilds + iosBuilds, cur.iosHours + iosHours,
+                cur.androidBuilds + androidBuilds, cur.androidHours + androidHours,
+                cur.otherBuilds + otherBuilds, cur.otherHours + otherHours
+            )
+        }
+        var csv = "リポジトリ(プロジェクト),iOSビルド数,iOS使用時間(時間),Androidビルド数,Android使用時間(時間),その他ビルド数,その他使用時間(時間),合計ビルド数,合計使用時間(時間),ケース1_Xcode+Bitrise(USD),ケース1_Xcodeプラン,ケース1_Bitriseプラン,ケース2_Xcode+GitHub(USD),ケース3_Bitrise(USD),ケース3_Bitriseプラン,ケース4_GitHub(USD)\n"
+        for project in byProject.keys.sorted() {
+            let s = byProject[project]!
+            let totalBuilds = s.iosBuilds + s.androidBuilds + s.otherBuilds
+            let totalHours = s.iosHours + s.androidHours + s.otherHours
+            let hasIOS = s.iosBuilds > 0
+            let hasAndroid = s.androidBuilds > 0
             let costs = CostEstimator.calculateCaseCosts(
-                iosHours: iosHours, androidHours: androidHours,
-                iosBuilds: iosBuilds, androidBuilds: androidBuilds,
-                otherHours: otherHours, otherBuilds: otherBuilds,
+                iosHours: s.iosHours, androidHours: s.androidHours,
+                iosBuilds: s.iosBuilds, androidBuilds: s.androidBuilds,
+                otherHours: s.otherHours, otherBuilds: s.otherBuilds,
                 hasIOS: hasIOS, hasAndroid: hasAndroid
             )
             let line = [
-                escaper.escape(repository),
-                String(iosBuilds),
-                String(format: "%.2f", iosHours),
-                String(androidBuilds),
-                String(format: "%.2f", androidHours),
-                String(otherBuilds),
-                String(format: "%.2f", otherHours),
+                escaper.escape(project),
+                String(s.iosBuilds),
+                String(format: "%.2f", s.iosHours),
+                String(s.androidBuilds),
+                String(format: "%.2f", s.androidHours),
+                String(s.otherBuilds),
+                String(format: "%.2f", s.otherHours),
                 String(totalBuilds),
                 String(format: "%.2f", totalHours),
                 String(format: "%.2f", costs.case1XcodeBitrise),

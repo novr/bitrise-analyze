@@ -25,8 +25,8 @@ protocol CSVGenerator {
     func generateCSV(from data: Any) throws -> String
     /// リポジトリ（=プロジェクト）ごとの 30日/90日 のビルド数・平均時間・総時間を1行にまとめたCSV
     func generateProjectSummaryCSV(from analysis: RepositoryAnalysis) throws -> String
-    /// 30日データから Xcode Cloud / Bitrise / GitHub Actions のコスト推測CSV
-    func generateCostEstimateCSV(from analysis: RepositoryAnalysis) throws -> String
+    /// 指定期間のデータから Xcode Cloud / Bitrise / GitHub Actions のコスト推測CSV（period: "30日" or "90日"）
+    func generateCostEstimateCSV(from analysis: RepositoryAnalysis, period: String) throws -> String
 }
 
 protocol MarkdownGenerator {

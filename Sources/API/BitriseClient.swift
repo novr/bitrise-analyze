@@ -70,13 +70,23 @@ struct BitriseClient: BitriseClientProtocol {
                 case .undocumented(let statusCode, _):
                     if statusCode == 429 {
                         throw BitriseClientError.rateLimited
+                    } else if statusCode == 502 || statusCode == 503 || statusCode == 504 {
+                        // ゲートウェイ・サーバー過負荷はリトライ
+                        throw BitriseClientError.retryableServerError(statusCode)
                     } else {
                         throw BitriseClientError.apiError("APIエラー (HTTP \(statusCode))")
                     }
                 }
             } catch let error as BitriseClientError {
-                // リトライしないエラー
-                throw error
+                if case .retryableServerError(let code) = error {
+                    lastError = BitriseClientError.apiError("APIエラー (HTTP \(code))")
+                    if attempt < maxRetries - 1 {
+                        print("⚠️  HTTP \(code) のため \(Int(retryDelay * Double(attempt + 1)))秒後にリトライ (\(attempt + 1)/\(maxRetries))...")
+                        try await Task.sleep(nanoseconds: UInt64(retryDelay * Double(attempt + 1) * 1_000_000_000))
+                    }
+                } else {
+                    throw error
+                }
             } catch {
                 lastError = error
                 

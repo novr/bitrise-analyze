@@ -46,6 +46,20 @@ final class CostEstimatorTests: XCTestCase {
         XCTAssertFalse(CostEstimator.isAndroidRepo("ios-app"))
     }
 
+    // MARK: - projectName
+
+    func testProjectNameSuffix() {
+        XCTAssertEqual(CostEstimator.projectName(from: "myapp-ios"), "myapp")
+        XCTAssertEqual(CostEstimator.projectName(from: "myapp_ios"), "myapp")
+        XCTAssertEqual(CostEstimator.projectName(from: "myapp-android"), "myapp")
+        XCTAssertEqual(CostEstimator.projectName(from: "myapp_android"), "myapp")
+    }
+
+    func testProjectNameNoSuffix() {
+        XCTAssertEqual(CostEstimator.projectName(from: "standalone-repo"), "standalone-repo")
+        XCTAssertEqual(CostEstimator.projectName(from: "myapp"), "myapp")
+    }
+
     // MARK: - getXcodePlan
 
     func testGetXcodePlanZeroHours() {

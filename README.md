@@ -134,7 +134,7 @@ swift run bitrise-analyze workspace-members YOUR-WORKSPACE-SLUG -o output/member
 - **`project_build_summary.csv`** - プロジェクト（リポジトリ）ごとの 30日/90日 サマリー
   - ビルド数・平均時間(分)・総時間(分) を 30日/90日 で1行に集約
 
-- **`cost_estimate_30days.csv`** - 30日データによるコスト推測（Xcode Cloud / Bitrise / GitHub Actions）
+- **`cost_estimate_30days.csv`** / **`cost_estimate_90days.csv`** - 30日・90日データによるコスト推測（Xcode Cloud / Bitrise / GitHub Actions）
   - リポジトリごとの4ケース（Xcode+Bitrise、Xcode+GitHub、Bitrise単体、GitHub単体）の概算USD
   
 - **`workflow_stats.csv`** - ワークフロー別の詳細統計
@@ -148,13 +148,6 @@ swift run bitrise-analyze workspace-members YOUR-WORKSPACE-SLUG -o output/member
   
 - **`machine_type_stats.csv`** - マシンタイプ別統計
   - 使用頻度、実行時間、コスト分析
-
-#### Markdownレポート
-
-- **`report_7日.md`** - 7日期間の詳細レポート
-- **`report_30日.md`** - 30日期間の詳細レポート  
-- **`report_90日.md`** - 90日期間の詳細レポート
-- **`report_全期間.md`** - 全期間の詳細レポート
 
 ### コンソール出力
 
@@ -255,7 +248,7 @@ swift run bitrise-analyze aggregate --verbose
 # 出力されるファイル:
 # - repository_stats.csv: リポジトリ別の詳細統計
 # - project_build_summary.csv: 30日/90日サマリー
-# - cost_estimate_30days.csv: コスト推測（Xcode/Bitrise/GitHub）
+# - cost_estimate_30days.csv / cost_estimate_90days.csv: コスト推測（Xcode/Bitrise/GitHub）
 # - workflow_stats.csv: ワークフロー別の統計
 # - daily_trends.csv: 日別トレンド
 # - hourly_distribution.csv: 時間帯別分布

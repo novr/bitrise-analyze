@@ -52,6 +52,16 @@ enum CostEstimator {
         return false
     }
     
+    /// 区切り - / _ と ios / android サフィックスを除いた部分をプロジェクト名として返す。一致する場合は同一プロジェクトとして集約する。
+    static func projectName(from repository: String) -> String {
+        let lower = repository.lowercased()
+        if lower.hasSuffix("-ios") { return String(repository.dropLast(4)) }
+        if lower.hasSuffix("_ios") { return String(repository.dropLast(4)) }
+        if lower.hasSuffix("-android") { return String(repository.dropLast(8)) }
+        if lower.hasSuffix("_android") { return String(repository.dropLast(8)) }
+        return repository
+    }
+    
     static func getXcodePlan(hours: Double) -> XcodePlan {
         if hours <= 0 { return xcodePlans[0] }
         for plan in xcodePlans {

@@ -78,11 +78,6 @@ class ReportGeneratorImpl {
             try await generateCSVReports(from: data, to: directory)
         }
         
-        // Markdownレポートの生成
-        if config.outputFormats.contains(.markdown) {
-            try await generateMarkdownReports(from: data, to: directory)
-        }
-        
         // コンソール出力
         printConsoleSummary(stats: data.statistics)
         printTopAppsSummary(analysis: data.repositoryAnalysis)
@@ -101,9 +96,11 @@ class ReportGeneratorImpl {
         let projectSummaryCSV = try csvGenerator.generateProjectSummaryCSV(from: data.repositoryAnalysis)
         try outputManager.writeCSV(projectSummaryCSV, filename: "project_build_summary.csv", to: directory)
         
-        // コスト推測CSV（30日・Xcode Cloud / Bitrise / GitHub Actions）
-        let costEstimateCSV = try csvGenerator.generateCostEstimateCSV(from: data.repositoryAnalysis)
-        try outputManager.writeCSV(costEstimateCSV, filename: "cost_estimate_30days.csv", to: directory)
+        // コスト推測CSV（30日・90日・Xcode Cloud / Bitrise / GitHub Actions）
+        let costEstimate30 = try csvGenerator.generateCostEstimateCSV(from: data.repositoryAnalysis, period: "30日")
+        try outputManager.writeCSV(costEstimate30, filename: "cost_estimate_30days.csv", to: directory)
+        let costEstimate90 = try csvGenerator.generateCostEstimateCSV(from: data.repositoryAnalysis, period: "90日")
+        try outputManager.writeCSV(costEstimate90, filename: "cost_estimate_90days.csv", to: directory)
         
         // ワークフロー統計CSV
         let workflowCSV = try csvGenerator.generateCSV(from: data.workflowAnalysis)

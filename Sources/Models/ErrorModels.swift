@@ -35,7 +35,9 @@ enum BitriseClientError: Error, LocalizedError, Equatable {
     case timeout
     case invalidResponse
     case rateLimited
-    
+    /// 502/503/504 などリトライ可能なサーバーエラー（リトライ後に apiError に変換して throw する）
+    case retryableServerError(Int)
+
     var errorDescription: String? {
         switch self {
         case .invalidToken:
@@ -50,6 +52,8 @@ enum BitriseClientError: Error, LocalizedError, Equatable {
             return "無効なレスポンスを受信しました。"
         case .rateLimited:
             return "APIレート制限に達しました。しばらく待ってから再試行してください。"
+        case .retryableServerError(let code):
+            return "APIエラー (HTTP \(code))。再試行します。"
         }
     }
 }
