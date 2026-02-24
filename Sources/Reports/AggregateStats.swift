@@ -1,10 +1,19 @@
 import Foundation
 import ArgumentParser
 
-struct AggregateStats: AsyncParsableCommand {
+struct Aggregate: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "aggregate",
-        abstract: "Bitriseビルドデータの集計とレポート生成"
+        abstract: "Bitriseビルドデータの集計とレポート生成",
+        subcommands: [AggregateAll.self],
+        defaultSubcommand: AggregateAll.self
+    )
+}
+
+struct AggregateAll: AsyncParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "all",
+        abstract: "全レポートを生成（リポジトリ統計・プロジェクトサマリー・ワークフロー等）"
     )
     
     @Option(name: .shortAndLong, help: "データファイルのパス")

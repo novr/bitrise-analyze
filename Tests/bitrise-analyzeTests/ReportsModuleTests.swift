@@ -3,23 +3,24 @@ import XCTest
 
 class ReportsModuleTests: XCTestCase {
     
-    // MARK: - AggregateStats Tests
+    // MARK: - Aggregate / AggregateAll Tests
     
-    func testAggregateStatsInitialization() {
-        let aggregateStats = AggregateStats()
-        XCTAssertNotNil(aggregateStats)
+    func testAggregateInitialization() {
+        let aggregate = Aggregate()
+        XCTAssertNotNil(aggregate)
     }
     
-    func testAggregateStatsConfiguration() {
-        let config = AggregateStats.configuration
+    func testAggregateConfiguration() {
+        let config = Aggregate.configuration
         XCTAssertEqual(config.commandName, "aggregate")
         XCTAssertEqual(config.abstract, "Bitriseビルドデータの集計とレポート生成")
+        XCTAssertNotNil(config.defaultSubcommand)
+        XCTAssertEqual(config.defaultSubcommand?.configuration.commandName, "all")
     }
     
-    func testAggregateStatsDefaultValues() {
-        // ArgumentParserのテストは複雑なため、設定値のみをテスト
-        XCTAssertEqual(AggregateStats.configuration.commandName, "aggregate")
-        XCTAssertEqual(AggregateStats.configuration.abstract, "Bitriseビルドデータの集計とレポート生成")
+    func testAggregateAllConfiguration() {
+        XCTAssertEqual(AggregateAll.configuration.commandName, "all")
+        XCTAssertEqual(AggregateAll.configuration.abstract, "全レポートを生成（リポジトリ統計・プロジェクトサマリー・ワークフロー等）")
     }
     
     // MARK: - ReportGenerator Tests

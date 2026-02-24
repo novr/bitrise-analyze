@@ -7,7 +7,7 @@ struct Analyze: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "bitrise-analyze",
         abstract: "Bitriseビルドデータの取得と分析ツール",
-        subcommands: [AggregateStats.self]
+        subcommands: [Aggregate.self, WorkspaceMembersCommand.self]
     )
     
     enum AnalyzeError: Error {
