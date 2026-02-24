@@ -66,7 +66,10 @@ swift run bitrise-analyze
 #### 基本的な集計実行
 
 ```bash
+# 全レポートを生成（サブコマンド未指定時は all がデフォルト）
 swift run bitrise-analyze aggregate
+# 同上（明示的に all を指定）
+swift run bitrise-analyze aggregate all
 ```
 
 #### 集計オプション
@@ -83,6 +86,18 @@ swift run bitrise-analyze aggregate --input custom_data.json --output custom_out
 
 # 詳細ログ付きで実行
 swift run bitrise-analyze aggregate --verbose
+```
+
+### ワークスペースメンバー出力
+
+指定したワークスペースのメンバー一覧をCSVで出力します。**トークンは必須**（環境変数 `BITRISE_ACCESS_TOKEN` または `-t` で指定）。
+
+```bash
+# ワークスペース slug を指定
+swift run bitrise-analyze workspace-members YOUR-WORKSPACE-SLUG
+
+# 出力先を指定
+swift run bitrise-analyze workspace-members YOUR-WORKSPACE-SLUG -o output/members.csv
 ```
 
 ## 出力
@@ -115,6 +130,12 @@ swift run bitrise-analyze aggregate --verbose
   
 - **`repository_stats.csv`** - リポジトリ別の詳細統計
   - 各アプリの期間別統計、主要ワークフロー、失敗率の高いワークフロー
+
+- **`project_build_summary.csv`** - プロジェクト（リポジトリ）ごとの 30日/90日 サマリー
+  - ビルド数・平均時間(分)・総時間(分) を 30日/90日 で1行に集約
+
+- **`cost_estimate_30days.csv`** - 30日データによるコスト推測（Xcode Cloud / Bitrise / GitHub Actions）
+  - リポジトリごとの4ケース（Xcode+Bitrise、Xcode+GitHub、Bitrise単体、GitHub単体）の概算USD
   
 - **`workflow_stats.csv`** - ワークフロー別の詳細統計
   - 実行回数、成功率、平均実行時間、失敗回数
@@ -137,7 +158,7 @@ swift run bitrise-analyze aggregate --verbose
 
 ### コンソール出力
 
-集計実行時には、各期間の要約統計がコンソールに表示されます：
+集計実行時には、各期間の要約統計に加え、**30日間のビルド数・総時間のトップApp**がコンソールに表示されます。
 
 ```
 ============================================================
@@ -146,12 +167,16 @@ swift run bitrise-analyze aggregate --verbose
 
 📈 7日期間:
   📦 総ビルド数: 300
-  ✅ 成功: 231 (77.0%)
-  ❌ 失敗: 36
-  ⏹️  中断: 33
-  ⏱️  平均実行時間: 11m 25s
-  📊 中央値: 9m 23s
-  💰 総コスト: 0 credits
+  ...
+
+================================================================================
+📊 ビルド数の多いApp（30日間・トップ10）
+================================================================================
+順位  App名                                ビルド数    平均時間     総時間          成功率
+...
+================================================================================
+⏱️  総ビルド時間の多いApp（30日間・トップ10）
+...
 ```
 
 ## アーキテクチャ
@@ -166,7 +191,9 @@ swift run bitrise-analyze aggregate --verbose
 - **StreamingJSONWriter.swift**: ストリーミングJSON出力
 
 #### データ分析
-- **AggregateStats.swift**: データ集計・分析機能
+- **AggregateStats.swift**: 集計コマンド（`aggregate` とサブコマンド `all`、デフォルトは all）
+- **CostEstimator.swift**: Xcode Cloud / Bitrise / GitHub Actions のコスト推測ロジック
+- **WorkspaceMembersCommand.swift**: ワークスペースメンバーCSV出力（`workspace-members` サブコマンド）
 - **openapi.yaml**: Bitrise APIのOpenAPI仕様書
 - **openapi-generator-config.yaml**: OpenAPI Generatorの設定
 
@@ -227,6 +254,8 @@ swift run bitrise-analyze aggregate --verbose
 
 # 出力されるファイル:
 # - repository_stats.csv: リポジトリ別の詳細統計
+# - project_build_summary.csv: 30日/90日サマリー
+# - cost_estimate_30days.csv: コスト推測（Xcode/Bitrise/GitHub）
 # - workflow_stats.csv: ワークフロー別の統計
 # - daily_trends.csv: 日別トレンド
 # - hourly_distribution.csv: 時間帯別分布

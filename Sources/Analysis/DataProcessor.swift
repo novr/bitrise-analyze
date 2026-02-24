@@ -85,6 +85,7 @@ class ReportGeneratorImpl {
         
         // コンソール出力
         printConsoleSummary(stats: data.statistics)
+        printTopAppsSummary(analysis: data.repositoryAnalysis)
     }
     
     private func generateCSVReports(from data: ProcessedData, to directory: URL) async throws {
@@ -95,6 +96,14 @@ class ReportGeneratorImpl {
         // リポジトリ統計CSV
         let repositoryCSV = try csvGenerator.generateCSV(from: data.repositoryAnalysis)
         try outputManager.writeCSV(repositoryCSV, filename: "repository_stats.csv", to: directory)
+        
+        // プロジェクト（リポジトリ）ごと 30日/90日 サマリーCSV
+        let projectSummaryCSV = try csvGenerator.generateProjectSummaryCSV(from: data.repositoryAnalysis)
+        try outputManager.writeCSV(projectSummaryCSV, filename: "project_build_summary.csv", to: directory)
+        
+        // コスト推測CSV（30日・Xcode Cloud / Bitrise / GitHub Actions）
+        let costEstimateCSV = try csvGenerator.generateCostEstimateCSV(from: data.repositoryAnalysis)
+        try outputManager.writeCSV(costEstimateCSV, filename: "cost_estimate_30days.csv", to: directory)
         
         // ワークフロー統計CSV
         let workflowCSV = try csvGenerator.generateCSV(from: data.workflowAnalysis)

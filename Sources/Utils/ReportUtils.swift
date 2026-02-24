@@ -41,6 +41,62 @@ func printConsoleSummary(stats: [String: BuildStatistics]) {
     print("\n" + String(repeating: "=", count: 60))
 }
 
+/// 30日データでビルド数・総時間のトップAppをコンソールに出力
+func printTopAppsSummary(analysis: RepositoryAnalysis, topN: Int = 10) {
+    typealias RepoStat = (repository: String, builds: Int, avgMinutes: Double, totalMinutes: Double, successRate: Double)
+    var rows: [RepoStat] = []
+    for (repo, periodStats) in analysis.repositoryStats {
+        guard let stats = periodStats["30日"] else { continue }
+        let avgMin = stats.averageDuration / 60
+        let totalMin = Double(stats.totalBuilds) * avgMin
+        rows.append((repo, stats.totalBuilds, avgMin, totalMin, stats.successRate))
+    }
+    if rows.isEmpty { return }
+    
+    func formatDuration(_ minutes: Double) -> String {
+        if minutes < 60 { return String(format: "%.1f分", minutes) }
+        if minutes < 1440 { return String(format: "%.1f時間", minutes / 60) }
+        return String(format: "%.1f日", minutes / 1440)
+    }
+    
+    func pad(_ s: String, _ length: Int) -> String {
+        let t = String(s.prefix(length))
+        return t + String(repeating: " ", count: max(0, length - t.count))
+    }
+    
+    print("\n" + String(repeating: "=", count: 80))
+    print("📊 ビルド数の多いApp（30日間・トップ\(topN)）")
+    print(String(repeating: "=", count: 80))
+    print(pad("順位", 4) + pad("App名", 35) + pad("ビルド数", 10) + pad("平均時間", 12) + pad("総時間", 15) + "成功率")
+    print(String(repeating: "-", count: 80))
+    for (i, r) in rows.sorted(by: { $0.builds > $1.builds }).prefix(topN).enumerated() {
+        let repo = String(r.repository.replacingOccurrences(of: "\n", with: " ").prefix(34))
+        let line = pad(String(i + 1), 4) + pad(repo, 35) + pad(String(r.builds), 10) + pad(formatDuration(r.avgMinutes), 12) + pad(formatDuration(r.totalMinutes), 15) + String(format: "%.1f%%", r.successRate)
+        print(line)
+    }
+    
+    print("\n" + String(repeating: "=", count: 80))
+    print("⏱️  総ビルド時間の多いApp（30日間・トップ\(topN)）")
+    print(String(repeating: "=", count: 80))
+    print(pad("順位", 4) + pad("App名", 35) + pad("総時間", 15) + pad("ビルド数", 10) + pad("平均時間", 12) + "成功率")
+    print(String(repeating: "-", count: 80))
+    for (i, r) in rows.sorted(by: { $0.totalMinutes > $1.totalMinutes }).prefix(topN).enumerated() {
+        let repo = String(r.repository.replacingOccurrences(of: "\n", with: " ").prefix(34))
+        let line = pad(String(i + 1), 4) + pad(repo, 35) + pad(formatDuration(r.totalMinutes), 15) + pad(String(r.builds), 10) + pad(formatDuration(r.avgMinutes), 12) + String(format: "%.1f%%", r.successRate)
+        print(line)
+    }
+    
+    let totalBuilds = rows.map(\.builds).reduce(0, +)
+    let totalMinutes = rows.map(\.totalMinutes).reduce(0, +)
+    print("\n" + String(repeating: "=", count: 80))
+    print("📈 サマリー（30日間）")
+    print(String(repeating: "=", count: 80))
+    print("総App数: \(rows.count)")
+    print("総ビルド数: \(totalBuilds)")
+    print("総ビルド時間: \(formatDuration(totalMinutes))")
+    print(String(repeating: "=", count: 80))
+}
+
 /// Markdownレポートを生成する
 func generateMarkdownReport(stat: BuildStatistics, builds: [BuildData], period: String) -> String {
     let markdown = """

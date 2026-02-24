@@ -182,6 +182,88 @@ class ImprovedCSVGenerator: CSVGenerator {
         return csv
     }
     
+    func generateProjectSummaryCSV(from analysis: RepositoryAnalysis) throws -> String {
+        var csv = "リポジトリ,30日_ビルド数,30日_平均時間_分,30日_総時間_分,90日_ビルド数,90日_平均時間_分,90日_総時間_分\n"
+        for repository in analysis.repositoryStats.keys.sorted() {
+            guard let periodStats = analysis.repositoryStats[repository] else { continue }
+            func rowFor(_ period: String) -> (Int, Double, Double) {
+                guard let stats = periodStats[period] else { return (0, 0, 0) }
+                let avgMin = stats.averageDuration / 60
+                let totalMin = Double(stats.totalBuilds) * avgMin
+                return (stats.totalBuilds, avgMin, totalMin)
+            }
+            let d30 = rowFor("30日")
+            let d90 = rowFor("90日")
+            if d30.0 == 0 && d90.0 == 0 { continue }
+            let line = [
+                escaper.escape(repository),
+                String(d30.0),
+                String(format: "%.2f", d30.1),
+                String(format: "%.2f", d30.2),
+                String(d90.0),
+                String(format: "%.2f", d90.1),
+                String(format: "%.2f", d90.2)
+            ].joined(separator: ",")
+            csv += line + "\n"
+        }
+        return csv
+    }
+    
+    func generateCostEstimateCSV(from analysis: RepositoryAnalysis) throws -> String {
+        var csv = "リポジトリ(プロジェクト),iOSビルド数,iOS使用時間(時間),Androidビルド数,Android使用時間(時間),その他ビルド数,その他使用時間(時間),合計ビルド数,合計使用時間(時間),ケース1_Xcode+Bitrise(USD),ケース1_Xcodeプラン,ケース1_Bitriseプラン,ケース2_Xcode+GitHub(USD),ケース3_Bitrise(USD),ケース3_Bitriseプラン,ケース4_GitHub(USD)\n"
+        for repository in analysis.repositoryStats.keys.sorted() {
+            guard let periodStats = analysis.repositoryStats[repository], let stats = periodStats["30日"] else { continue }
+            let builds = stats.totalBuilds
+            let avgMin = stats.averageDuration / 60
+            let totalMin = Double(builds) * avgMin
+            let hours = totalMin / 60
+            
+            var iosBuilds = 0, androidBuilds = 0, otherBuilds = 0
+            var iosHours = 0.0, androidHours = 0.0, otherHours = 0.0
+            if CostEstimator.isIOSRepo(repository) {
+                iosBuilds = builds
+                iosHours = hours
+            } else if CostEstimator.isAndroidRepo(repository) {
+                androidBuilds = builds
+                androidHours = hours
+            } else {
+                otherBuilds = builds
+                otherHours = hours
+            }
+            
+            let totalBuilds = iosBuilds + androidBuilds + otherBuilds
+            let totalHours = iosHours + androidHours + otherHours
+            let hasIOS = iosBuilds > 0
+            let hasAndroid = androidBuilds > 0
+            let costs = CostEstimator.calculateCaseCosts(
+                iosHours: iosHours, androidHours: androidHours,
+                iosBuilds: iosBuilds, androidBuilds: androidBuilds,
+                otherHours: otherHours, otherBuilds: otherBuilds,
+                hasIOS: hasIOS, hasAndroid: hasAndroid
+            )
+            let line = [
+                escaper.escape(repository),
+                String(iosBuilds),
+                String(format: "%.2f", iosHours),
+                String(androidBuilds),
+                String(format: "%.2f", androidHours),
+                String(otherBuilds),
+                String(format: "%.2f", otherHours),
+                String(totalBuilds),
+                String(format: "%.2f", totalHours),
+                String(format: "%.2f", costs.case1XcodeBitrise),
+                escaper.escape(costs.case1XcodePlanName),
+                escaper.escape(costs.case1BitrisePlanName),
+                String(format: "%.2f", costs.case2XcodeGitHub),
+                String(format: "%.2f", costs.case3Bitrise),
+                escaper.escape(costs.case3BitrisePlanName),
+                String(format: "%.2f", costs.case4GitHub)
+            ].joined(separator: ",")
+            csv += line + "\n"
+        }
+        return csv
+    }
+    
     private func generateWorkflowCSV(_ analysis: WorkflowAnalysis) throws -> String {
         var csv = "ワークフロー,実行回数,平均実行時間(分),失敗率(%)\n"
         
